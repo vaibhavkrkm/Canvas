@@ -30,7 +30,7 @@ class Grid:
 	def grid_events(self, surface):
 		mouse_click = pygame.mouse.get_pressed()
 		selected_col = selected_row = None
-		if(mouse_click[0] == 1):
+		if(mouse_click[0] == 1 or mouse_click[2] == 1):
 			mouse_pos = pygame.mouse.get_pos()
 			if(mouse_pos[0] <= SCREENWIDTH and mouse_pos[1] < SCREENHEIGHT):
 			
@@ -52,7 +52,10 @@ class Grid:
 
 				# filling the cell
 				# self._fill(game_display, selected_row, selected_col, colors.earth_green)
-				self.cell_data[(selected_row, selected_col)] = Grid.selected_color
+				if(mouse_click[0] == 1):
+					self.cell_data[(selected_row, selected_col)] = Grid.selected_color
+				elif(mouse_click[2] == 1):
+					self.cell_data.pop((selected_row, selected_col), None)
 
 	@classmethod
 	def set_color(cls, color):
@@ -107,6 +110,10 @@ pygame.display.set_caption("Canvas")
 # creating the empty grid of size 20 ppc (px. per cell)
 grid = Grid(20)
 
+# loading drawing pointer images
+pencil_surface = pygame.image.load("pencil.png").convert_alpha()
+eraser_surface = pygame.transform.scale(pygame.image.load("eraser.png").convert_alpha(), (48, 48))
+
 # creating tools
 color_red = Tool(["Grid.set_color(colors.really_red)", "update_color_text(BASIC_FONT.render('Red', True, colors.really_red))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 1, 50, 50, colors.really_red)
 color_green = Tool(["Grid.set_color(colors.earth_green)", "update_color_text(BASIC_FONT.render('Green', True, colors.earth_green))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 1, 50, 50, colors.earth_green)
@@ -143,6 +150,19 @@ while run:
 		COLOR_BUTTON.tool_events()
 
 	game_display.blit(color_text, (SCREENWIDTH + 25 + 100, 0 + 25 - color_text.get_height() // 2))
+
+	mouse_pos = pygame.mouse.get_pos()
+	if(mouse_pos[0] <= SCREENWIDTH):
+		pygame.mouse.set_visible(False)
+		mouse_click = pygame.mouse.get_pressed()
+		if(mouse_click[0] == 1):
+			game_display.blit(pencil_surface, (mouse_pos[0], mouse_pos[1] - pencil_surface.get_height()))
+		elif(mouse_click[2] == 1):
+			game_display.blit(eraser_surface, (mouse_pos[0], mouse_pos[1] - eraser_surface.get_height()))
+		else:
+			game_display.blit(pencil_surface, (mouse_pos[0], mouse_pos[1] - pencil_surface.get_height()))
+	else:
+		pygame.mouse.set_visible(True)
 
 	pygame.display.update()
 	CLOCK.tick(FPS)
