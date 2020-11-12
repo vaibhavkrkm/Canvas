@@ -1,6 +1,10 @@
 import pygame
 import colors
 import tkinter as tk
+import sys
+from pathlib import Path
+import os
+import winsound
 
 
 class Grid:
@@ -138,18 +142,48 @@ class Tool:
 				self.execute()
 
 
+def QUIT():
+	pygame.quit()
+	sys.exit()
+
+
 def update_color_text(text_surface):
 	global color_text
 	color_text = text_surface
 
 
 def export():
+	def export_png():
+		png_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".png")
+		sub_surface = game_display.subsurface((0, 0, SCREENWIDTH, SCREENHEIGHT))
+		try:
+			pygame.image.save(sub_surface, png_path)
+			root.destroy()
+		except Exception:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+
+	home_dir = str(Path.home())
 	root = tk.Tk()
 	root.resizable(False, False)
-	root.geometry("700x400")
+	root.geometry("400x200")
+
+	label_file_path = tk.Label(root, text="File Path : ")
+	label_file_path.pack()
+
+	entry_file_path = tk.Entry(root)
+	entry_file_path.insert(0, home_dir + r"\Pictures\Canvas")
+	entry_file_path.pack()
+
+	label_file_name = tk.Label(root, text="File Name : ")
+	label_file_name.pack()
+
+	entry_file_name = tk.Entry(root)
+	entry_file_name.pack()
+
+	button_export = tk.Button(root, text="Export .PNG", command=export_png)
+	button_export.pack()
 
 	root.call("wm", "attributes", '.', "-topmost", '1')
-
 	root.mainloop()
 
 
@@ -198,13 +232,20 @@ color_text = BASIC_FONT.render("Green", True, colors.earth_green)
 clear_text_temp = BASIC_FONT.render("C : Clear", True, colors.really_red)
 clear_text = pygame.transform.scale(clear_text_temp, (clear_text_temp.get_width() - 5, clear_text_temp.get_height() - 5))
 
+# making Canvas directory
+home_dir = str(Path.home())
+canvas_path = os.path.join(home_dir, "Pictures", "Canvas")
+if(os.path.isdir(canvas_path)):
+	pass
+else:
+	os.mkdir(canvas_path)
+
 run = True
 while run:
 	# event section start
 	for event in pygame.event.get():
 		if(event.type == pygame.QUIT):
-			pygame.quit()
-			quit()
+			QUIT()
 		elif(event.type == pygame.KEYUP):
 			if(event.key == pygame.K_c):
 				grid.clear_cells()
