@@ -166,6 +166,7 @@ def export():
 	root = tk.Tk()
 	root.resizable(False, False)
 	root.geometry("400x200")
+	root.title("Export .PNG...")
 
 	label_file_path = tk.Label(root, text="File Path : ")
 	label_file_path.pack()
