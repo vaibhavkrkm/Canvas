@@ -1,0 +1,6 @@
+Credits ------------>
+
+Software Developed by : Vaibhav Kumar
+Pencil, Eraser and Fill Tools Icons from : findicons.com
+Application Icon from : findicons.com
+Developed with : Pygame in Python
