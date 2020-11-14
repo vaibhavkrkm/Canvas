@@ -46,6 +46,7 @@ class Grid:
 
 	def grid_events(self, surface):
 		mouse_click = pygame.mouse.get_pressed()
+		key_press = pygame.key.get_pressed()
 		selected_col = selected_row = None
 		mouse_pos = pygame.mouse.get_pos()
 		if(mouse_pos[0] <= SCREENWIDTH and mouse_pos[1] < SCREENHEIGHT):
@@ -65,9 +66,9 @@ class Grid:
 					selected_row = row - 1
 					break
 
-			if(mouse_click[0] == 1):
+			if(mouse_click[0] == 1 or key_press[pygame.K_d]):
 				self.cell_data[(selected_row, selected_col)] = Grid.selected_color
-			elif(mouse_click[1] == 1):
+			elif(mouse_click[1] == 1 or key_press[pygame.K_f]):
 				cell_color = None
 				delta_row = delta_col = 0
 				working_row = cell_row = selected_row
@@ -111,7 +112,7 @@ class Grid:
 
 						working_row += delta_row
 						working_col = cell_col
-			elif(mouse_click[2] == 1):
+			elif(mouse_click[2] == 1 or key_press[pygame.K_e]):
 				self.cell_data.pop((selected_row, selected_col), None)
 
 	@classmethod
