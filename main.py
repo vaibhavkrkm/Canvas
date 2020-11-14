@@ -30,12 +30,15 @@ class Grid:
 		surface.fill(color, (0 + self.cell_size * col, 0 + self.cell_size * row, self.cell_size + 1, self.cell_size + 1))
 
 	def draw_cells(self, surface):
+		global current_file_name
 		try:
 			for CELL in self.cell_data:
 				self._fill(game_display, CELL[0], CELL[1], self.cell_data[CELL])
 		except Exception as e:
 			winsound.PlaySound("*", winsound.SND_ASYNC)
 			corrupted_file_dialog(e)
+			current_file_name = file_name_temp
+			set_title()
 			self.cell_data = self.cell_data_temp
 
 	def clear_cells(self):
@@ -186,11 +189,12 @@ def update_color_text(text_surface):
 
 def load():
 	def load_project():
-		global current_file_name
+		global current_file_name, file_name_temp
 		cvp_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".cvp")
 		try:
 			with open(os.path.join(cvp_path), 'r') as f:
 				grid.cell_data_temp = grid.cell_data
+				file_name_temp = current_file_name
 				try:
 					cell_data = eval(f.read())
 					grid.cell_data = cell_data
@@ -319,8 +323,9 @@ BASIC_FONT = pygame.font.SysFont("comicsans", 40)
 # making the game display surface
 game_display = pygame.display.set_mode((SCREENWIDTH + 300, SCREENHEIGHT))
 
-# current file name variable
+# file name variable(s)
 current_file_name = "New Canvas Project"
+file_name_temp = None
 
 # setting the title
 set_title = lambda: pygame.display.set_caption(f"{current_file_name} - Canvas")
