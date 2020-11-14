@@ -121,7 +121,7 @@ class Grid:
 
 
 class Tool:
-	def __init__(self, cmds_list, x, y, width, height, color=colors.white, caption="", border = 0):
+	def __init__(self, cmds_list, x, y, width, height, color=colors.white, caption="", border=0, caption_size=None):
 		self.x = x
 		self.y = y
 		self.width = width
@@ -131,7 +131,12 @@ class Tool:
 		self.caption = caption
 		self.border = border
 		if(self.caption != ""):
-			self.text_surface = BASIC_FONT.render(self.caption, True, colors.black)
+			if(caption_size is None):
+				text_surface_temp = BASIC_FONT.render(self.caption, True, colors.black)
+				self.caption_size = (text_surface_temp.get_width(), text_surface_temp.get_height())
+			else:
+				self.caption_size = caption_size
+			self.text_surface = pygame.transform.scale(BASIC_FONT.render(self.caption, True, colors.black), self.caption_size)
 		else:
 			self.text_surface = None
 
@@ -351,12 +356,15 @@ color_yellow = Tool(["Grid.set_color(colors.bright_yellow)", "update_color_text(
 color_toothpaste = Tool(["Grid.set_color(colors.toothpaste)", "update_color_text(BASIC_FONT.render('Toothpaste', True, colors.toothpaste))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 7, 50, 50, colors.toothpaste)
 color_cream = Tool(["Grid.set_color(colors.cream)", "update_color_text(BASIC_FONT.render('Cream', True, colors.cream))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 7, 50, 50, colors.cream)
 # other tools
-save_project = Tool(["save()"], SCREENWIDTH + 25 + 75, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
-open_project = Tool(["load()"], SCREENWIDTH + 25 + 75, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
-export_image = Tool(["export()"], SCREENWIDTH + 25 + 75, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
+save_project = Tool(["save()"], SCREENWIDTH + 25 * 2, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
+open_project = Tool(["load()"], SCREENWIDTH + 25 * 2, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
+export_image = Tool(["export()"], SCREENWIDTH + 25 * 2, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
+add_background = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 9 - 25, 100, 35, colors.purple, "Background", 2, (85, 25))
+change_grid_size = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Grid Size", 2, (90, 25))
+show_how_to_use = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 11 - 25, 100, 35, colors.shady_red, "HOW TO USE", 2, (90, 25))
 
 colors_tuple = (color_red, color_green, color_blue, color_pink, color_purple, color_yellow, color_toothpaste, color_cream)
-other_tools_tuple = (save_project, open_project, export_image)
+other_tools_tuple = (save_project, open_project, export_image, add_background, change_grid_size, show_how_to_use)
 
 color_text = BASIC_FONT.render("Green", True, colors.earth_green)
 clear_text_temp = BASIC_FONT.render("C : Clear", True, colors.really_red)
