@@ -15,6 +15,7 @@ class Grid:
 		self.rows = SCREENHEIGHT // self.cell_size
 		self.cols = SCREENWIDTH // self.cell_size
 		self.cell_data = {}
+		self.cell_data_temp = {}
 
 	def draw(self, surface, color):
 		# drawing columns
@@ -29,8 +30,13 @@ class Grid:
 		surface.fill(color, (0 + self.cell_size * col, 0 + self.cell_size * row, self.cell_size + 1, self.cell_size + 1))
 
 	def draw_cells(self, surface):
-		for CELL in self.cell_data:
-			self._fill(game_display, CELL[0], CELL[1], self.cell_data[CELL])
+		try:
+			for CELL in self.cell_data:
+				self._fill(game_display, CELL[0], CELL[1], self.cell_data[CELL])
+		except Exception as e:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+			corrupted_file_dialog(e)
+			self.cell_data = self.cell_data_temp
 
 	def clear_cells(self):
 		self.cell_data.clear()
@@ -147,9 +153,122 @@ def QUIT():
 	sys.exit()
 
 
+def get_screen_size(tk_root):
+	width = tk_root.winfo_screenwidth()
+	height = tk_root.winfo_screenheight()
+	return width, height
+
+
+def corrupted_file_dialog(e):
+	root = tk.Tk()
+	root.resizable(False, False)
+	root.title("Corrupted File Detected!")
+	screen_size = get_screen_size(root)
+	root.geometry(f"600x150+{screen_size[0] // 2 - 300}+{screen_size[1] // 2 - 75}")
+
+	label_corrupted_info = tk.Label(root, text="Sorry, the file you're looking for seems bad/corrupted in some way!")
+	label_corrupted_info.pack()
+
+	label_corrupted_exception = tk.Label(root, text="EXCEPTION : " + str(e))
+	label_corrupted_exception.pack()
+
+	button_ok = tk.Button(root, text="OK", command=root.destroy)
+	button_ok.pack()
+
+	root.call("wm", "attributes", '.', "-topmost", '1')
+	root.mainloop()
+
+
 def update_color_text(text_surface):
 	global color_text
 	color_text = text_surface
+
+
+def load():
+	def load_project():
+		global current_file_name
+		cvp_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".cvp")
+		try:
+			with open(os.path.join(cvp_path), 'r') as f:
+				grid.cell_data_temp = grid.cell_data
+				try:
+					cell_data = eval(f.read())
+					grid.cell_data = cell_data
+					current_file_name = entry_file_name.get()
+					set_title()
+				except Exception as e:
+					winsound.PlaySound("*", winsound.SND_ASYNC)
+					corrupted_file_dialog(e)
+
+			root.destroy()
+		except Exception:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+
+	root = tk.Tk()
+	root.resizable(False, False)
+	screen_size = get_screen_size(root)
+	root.geometry(f"400x200+{screen_size[0] // 2 - 200}+{screen_size[1] // 2 - 100}")
+	root.title("Load Project...")
+
+	label_file_path = tk.Label(root, text="File Path : ")
+	label_file_path.pack()
+
+	entry_file_path = tk.Entry(root)
+	entry_file_path.insert(0, canvas_projects_path)
+	entry_file_path.pack()
+
+	label_file_name = tk.Label(root, text="File Name : ")
+	label_file_name.pack()
+
+	entry_file_name = tk.Entry(root)
+	entry_file_name.pack()
+
+	button_load = tk.Button(root, text="Load .CVP (Canvas Project)", command=load_project)
+	button_load.pack()
+
+	root.call("wm", "attributes", '.', "-topmost", '1')
+	root.mainloop()
+
+
+def save():
+	def save_project():
+		global current_file_name
+		cvp_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".cvp")
+		try:
+			with open(os.path.join(cvp_path), 'w') as f:
+				f.write(repr(grid.cell_data))
+				current_file_name = entry_file_name.get()
+				set_title()
+
+			root.destroy()
+		except Exception:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+
+	root = tk.Tk()
+	root.resizable(False, False)
+	screen_size = get_screen_size(root)
+	root.geometry(f"400x200+{screen_size[0] // 2 - 200}+{screen_size[1] // 2 - 100}")
+	root.title("Save Project...")
+
+	label_file_path = tk.Label(root, text="File Path : ")
+	label_file_path.pack()
+
+	entry_file_path = tk.Entry(root)
+	entry_file_path.insert(0, canvas_projects_path)
+	entry_file_path.pack()
+
+	label_file_name = tk.Label(root, text="File Name : ")
+	label_file_name.pack()
+
+	entry_file_name = tk.Entry(root)
+	entry_file_name.pack()
+	entry_file_name.insert(0, current_file_name)
+
+	button_save = tk.Button(root, text="Save .CVP (Canvas Project)", command=save_project)
+	button_save.pack()
+
+	root.call("wm", "attributes", '.', "-topmost", '1')
+	root.mainloop()
 
 
 def export():
@@ -162,17 +281,17 @@ def export():
 		except Exception:
 			winsound.PlaySound("*", winsound.SND_ASYNC)
 
-	home_dir = str(Path.home())
 	root = tk.Tk()
 	root.resizable(False, False)
-	root.geometry("400x200")
+	screen_size = get_screen_size(root)
+	root.geometry(f"400x200+{screen_size[0] // 2 - 200}+{screen_size[1] // 2 - 100}")
 	root.title("Export .PNG...")
 
 	label_file_path = tk.Label(root, text="File Path : ")
 	label_file_path.pack()
 
 	entry_file_path = tk.Entry(root)
-	entry_file_path.insert(0, home_dir + r"\Pictures\Canvas")
+	entry_file_path.insert(0, canvas_path)
 	entry_file_path.pack()
 
 	label_file_name = tk.Label(root, text="File Name : ")
@@ -200,8 +319,12 @@ BASIC_FONT = pygame.font.SysFont("comicsans", 40)
 # making the game display surface
 game_display = pygame.display.set_mode((SCREENWIDTH + 300, SCREENHEIGHT))
 
+# current file name variable
+current_file_name = "New Canvas Project"
+
 # setting the title
-pygame.display.set_caption("Canvas")
+set_title = lambda: pygame.display.set_caption(f"{current_file_name} - Canvas")
+set_title()
 
 # creating the empty grid of size 20 ppc (px. per cell)
 grid = Grid(20)
@@ -222,8 +345,8 @@ color_yellow = Tool(["Grid.set_color(colors.bright_yellow)", "update_color_text(
 color_toothpaste = Tool(["Grid.set_color(colors.toothpaste)", "update_color_text(BASIC_FONT.render('Toothpaste', True, colors.toothpaste))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 7, 50, 50, colors.toothpaste)
 color_cream = Tool(["Grid.set_color(colors.cream)", "update_color_text(BASIC_FONT.render('Cream', True, colors.cream))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 7, 50, 50, colors.cream)
 # other tools
-save_project = Tool([], SCREENWIDTH + 25 + 75, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
-open_project = Tool([], SCREENWIDTH + 25 + 75, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
+save_project = Tool(["save()"], SCREENWIDTH + 25 + 75, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
+open_project = Tool(["load()"], SCREENWIDTH + 25 + 75, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
 export_image = Tool(["export()"], SCREENWIDTH + 25 + 75, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
 
 colors_tuple = (color_red, color_green, color_blue, color_pink, color_purple, color_yellow, color_toothpaste, color_cream)
@@ -233,13 +356,20 @@ color_text = BASIC_FONT.render("Green", True, colors.earth_green)
 clear_text_temp = BASIC_FONT.render("C : Clear", True, colors.really_red)
 clear_text = pygame.transform.scale(clear_text_temp, (clear_text_temp.get_width() - 5, clear_text_temp.get_height() - 5))
 
-# making Canvas directory
+# making directories and related variables
 home_dir = str(Path.home())
 canvas_path = os.path.join(home_dir, "Pictures", "Canvas")
+canvas_projects_path = os.path.join(home_dir, "Documents", "Canvas Projects")
+# Canvas directory
 if(os.path.isdir(canvas_path)):
 	pass
 else:
 	os.mkdir(canvas_path)
+# Canvas projects directory
+if(os.path.isdir(canvas_projects_path)):
+	pass
+else:
+	os.mkdir(canvas_projects_path)
 
 run = True
 while run:
