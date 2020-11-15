@@ -12,10 +12,17 @@ class Grid:
 
 	def __init__(self, cell_size):
 		self.cell_size = cell_size
+		self.cell_size_temp = cell_size
 		self.rows = SCREENHEIGHT // self.cell_size
 		self.cols = SCREENWIDTH // self.cell_size
 		self.cell_data = {}
 		self.cell_data_temp = {}
+
+	def reset_grid_size(self, cell_size):
+		self.cell_size = cell_size
+		self.rows = SCREENHEIGHT // self.cell_size
+		self.cols = SCREENWIDTH // self.cell_size
+		self.cell_data = {}
 
 	def draw(self, surface, color):
 		# drawing columns
@@ -39,6 +46,7 @@ class Grid:
 			corrupted_file_dialog(e)
 			current_file_name = file_name_temp
 			set_title()
+			self.cell_size = self.cell_size_temp
 			self.cell_data = self.cell_data_temp
 
 	def clear_cells(self):
@@ -200,9 +208,13 @@ def load():
 		try:
 			with open(os.path.join(cvp_path), 'r') as f:
 				grid.cell_data_temp = grid.cell_data
+				grid.cell_size_temp = grid.cell_size
 				file_name_temp = current_file_name
 				try:
-					cell_data = eval(f.read())
+					load_data = eval(f.read())            # (10, {})
+					grid_size = load_data[0]
+					cell_data = load_data[1]
+					grid.reset_grid_size(grid_size)
 					grid.cell_data = cell_data
 					current_file_name = entry_file_name.get()
 					set_title()
@@ -246,12 +258,13 @@ def save():
 		cvp_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".cvp")
 		try:
 			with open(os.path.join(cvp_path), 'w') as f:
-				f.write(repr(grid.cell_data))
+				f.write(repr((grid.cell_size, grid.cell_data)))
 				current_file_name = entry_file_name.get()
 				set_title()
 
 			root.destroy()
-		except Exception:
+		except Exception as e:
+			print(e)
 			winsound.PlaySound("*", winsound.SND_ASYNC)
 
 	root = tk.Tk()
@@ -317,6 +330,39 @@ def export():
 	root.mainloop()
 
 
+def modify_grid_size():
+	def apply_grid_size():
+		try:
+			grid_size_value = int(entry_grid_size.get())
+			if(grid_size_value in range(10, 41)):
+				grid.reset_grid_size(grid_size_value)
+				root.destroy()
+			else:
+				raise Exception
+		except Exception:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+	root = tk.Tk()
+	root.resizable(False, False)
+	screen_size = get_screen_size(root)
+	root.geometry(f"600x100+{screen_size[0] // 2 - 300}+{screen_size[1] // 2 - 50}")
+	root.title("Export .PNG...")
+
+	label_grid_size = tk.Label(root, text="Enter the Grid Size between 10 & 40 (both included) :")
+	label_grid_size.pack()
+
+	label_warning = tk.Label(root, text="Warning : ALL DATA of the current working file will be lost if grid size is changed!")
+	label_warning.pack()
+
+	entry_grid_size = tk.Entry(root)
+	entry_grid_size.pack()
+
+	button_apply = tk.Button(root, text="Apply", command=apply_grid_size)
+	button_apply.pack()
+
+	root.call("wm", "attributes", '.', "-topmost", '1')
+	root.mainloop()
+
+
 pygame.init()
 
 # constants
@@ -360,7 +406,7 @@ save_project = Tool(["save()"], SCREENWIDTH + 25 * 2, 0 + 50 * 9 - 25, 100, 35, 
 open_project = Tool(["load()"], SCREENWIDTH + 25 * 2, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
 export_image = Tool(["export()"], SCREENWIDTH + 25 * 2, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
 add_background = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 9 - 25, 100, 35, colors.purple, "Background", 2, (85, 25))
-change_grid_size = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Grid Size", 2, (90, 25))
+change_grid_size = Tool(["modify_grid_size()"], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Grid Size", 2, (90, 25))
 show_how_to_use = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 11 - 25, 100, 35, colors.shady_red, "HOW TO USE", 2, (90, 25))
 
 colors_tuple = (color_red, color_green, color_blue, color_pink, color_purple, color_yellow, color_toothpaste, color_cream)
