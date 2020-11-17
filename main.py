@@ -17,6 +17,8 @@ class Grid:
 		self.cols = SCREENWIDTH // self.cell_size
 		self.cell_data = {}
 		self.cell_data_temp = {}
+		self.background = colors.white
+		self.background_temp = colors.white
 
 	def reset_grid_size(self, cell_size):
 		self.cell_size = cell_size
@@ -48,6 +50,7 @@ class Grid:
 			set_title()
 			self.cell_size = self.cell_size_temp
 			self.cell_data = self.cell_data_temp
+			self.background = self.background_temp
 
 	def clear_cells(self):
 		self.cell_data.clear()
@@ -129,12 +132,13 @@ class Grid:
 
 
 class Tool:
-	def __init__(self, cmds_list, x, y, width, height, color=colors.white, caption="", border=0, caption_size=None):
+	def __init__(self, cmds_list, alter_cmds_list, x, y, width, height, color=colors.white, caption="", border=0, caption_size=None):
 		self.x = x
 		self.y = y
 		self.width = width
 		self.height = height
 		self.cmds_list = cmds_list
+		self.alter_cmds_list = alter_cmds_list
 		self.color = color
 		self.caption = caption
 		self.border = border
@@ -152,6 +156,10 @@ class Tool:
 		for CMD in self.cmds_list:
 			eval(CMD)
 
+	def alter_execute(self):
+		for CMD in self.alter_cmds_list:
+			eval(CMD)
+
 	def draw(self, surface):
 		pygame.draw.rect(surface, self.color, (self.x, self.y, self.width, self.height), self.border)
 		if(self.text_surface is not None):
@@ -163,6 +171,10 @@ class Tool:
 			mouse_pos = pygame.mouse.get_pos()
 			if(mouse_pos[0] > self.x and mouse_pos[0] < self.x + self.width and mouse_pos[1] > self.y and mouse_pos[1] < self.y + self.height):
 				self.execute()
+		elif(mouse_click[2] == 1):
+			mouse_pos = pygame.mouse.get_pos()
+			if(mouse_pos[0] > self.x and mouse_pos[0] < self.x + self.width and mouse_pos[1] > self.y and mouse_pos[1] < self.y + self.height):
+				self.alter_execute()
 
 
 def QUIT():
@@ -209,20 +221,26 @@ def load():
 			with open(os.path.join(cvp_path), 'r') as f:
 				grid.cell_data_temp = grid.cell_data
 				grid.cell_size_temp = grid.cell_size
+				grid.background_temp = grid.background
 				file_name_temp = current_file_name
 				try:
-					load_data = eval(f.read())            # (10, {})
+					load_data = eval(f.read())            # (10, {}, (255, 255, 255))
 					grid_size = load_data[0]
 					cell_data = load_data[1]
+					if(type(load_data[2]) is str):
+						background = pygame.transform.scale(pygame.image.load(load_data[2]), (SCREENWIDTH, SCREENHEIGHT))
+					elif(type(load_data[2] is tuple)):
+						background = load_data[2]
 					grid.reset_grid_size(grid_size)
 					grid.cell_data = cell_data
+					grid.background = background
 					current_file_name = entry_file_name.get()
 					set_title()
 				except Exception as e:
 					winsound.PlaySound("*", winsound.SND_ASYNC)
 					corrupted_file_dialog(e)
 
-			root.destroy()
+				root.destroy()
 		except Exception:
 			winsound.PlaySound("*", winsound.SND_ASYNC)
 
@@ -258,13 +276,15 @@ def save():
 		cvp_path = os.path.join(entry_file_path.get(), entry_file_name.get() + ".cvp")
 		try:
 			with open(os.path.join(cvp_path), 'w') as f:
-				f.write(repr((grid.cell_size, grid.cell_data)))
+				if(background_path is not None):
+					f.write(repr((grid.cell_size, grid.cell_data, background_path)))
+				else:
+					f.write(repr((grid.cell_size, grid.cell_data, grid.background)))
 				current_file_name = entry_file_name.get()
 				set_title()
 
 			root.destroy()
-		except Exception as e:
-			print(e)
+		except Exception:
 			winsound.PlaySound("*", winsound.SND_ASYNC)
 
 	root = tk.Tk()
@@ -330,6 +350,45 @@ def export():
 	root.mainloop()
 
 
+def change_bg():
+	def apply_bg():
+		global background_path
+		try:
+			background_path = entry_bg_path.get()
+			bg_img = pygame.image.load(background_path)
+			grid.background = pygame.transform.scale(bg_img, (SCREENWIDTH, SCREENHEIGHT))
+			root.destroy()
+		except Exception:
+			winsound.PlaySound("*", winsound.SND_ASYNC)
+
+	root = tk.Tk()
+	root.resizable(False, False)
+	screen_size = get_screen_size(root)
+	root.geometry(f"400x200+{screen_size[0] // 2 - 200}+{screen_size[1] // 2 - 100}")
+	root.title("Set Background")
+
+	label_bg_color = tk.Label(root, text="\nTo set a color background, do right-click\non a color instead of left-clicking it!")
+	label_bg_color.pack()
+
+	label_bg_image = tk.Label(root, text="\n Set an image background :")
+	label_bg_image.pack()
+
+	entry_bg_path = tk.Entry(root)
+	entry_bg_path.pack()
+
+	button_set_bg = tk.Button(root, text="Apply", command=apply_bg)
+	button_set_bg.pack()
+
+	root.call("wm", "attributes", '.', "-topmost", '1')
+	root.mainloop()
+
+
+def change_bg_color(color):
+	global background_path
+	grid.background = color
+	background_path = None
+
+
 def modify_grid_size():
 	def apply_grid_size():
 		try:
@@ -341,11 +400,12 @@ def modify_grid_size():
 				raise Exception
 		except Exception:
 			winsound.PlaySound("*", winsound.SND_ASYNC)
+
 	root = tk.Tk()
 	root.resizable(False, False)
 	screen_size = get_screen_size(root)
 	root.geometry(f"600x100+{screen_size[0] // 2 - 300}+{screen_size[1] // 2 - 50}")
-	root.title("Export .PNG...")
+	root.title("Change Grid Size")
 
 	label_grid_size = tk.Label(root, text="Enter the Grid Size between 10 & 40 (both included) :")
 	label_grid_size.pack()
@@ -393,21 +453,21 @@ fill_bucket_surface = pygame.transform.scale(pygame.image.load("fill.png").conve
 
 # creating tools
 # colors
-color_red = Tool(["Grid.set_color(colors.really_red)", "update_color_text(BASIC_FONT.render('Red', True, colors.really_red))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 1, 50, 50, colors.really_red)
-color_green = Tool(["Grid.set_color(colors.earth_green)", "update_color_text(BASIC_FONT.render('Green', True, colors.earth_green))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 1, 50, 50, colors.earth_green)
-color_blue = Tool(["Grid.set_color(colors.really_blue)", "update_color_text(BASIC_FONT.render('Blue', True, colors.really_blue))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 3, 50, 50, colors.really_blue)
-color_pink = Tool(["Grid.set_color(colors.bright_pink)", "update_color_text(BASIC_FONT.render('Pink', True, colors.bright_pink))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 3, 50, 50, colors.bright_pink)
-color_purple = Tool(["Grid.set_color(colors.purple)", "update_color_text(BASIC_FONT.render('Purple', True, colors.purple))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 5, 50, 50, colors.purple)
-color_yellow = Tool(["Grid.set_color(colors.bright_yellow)", "update_color_text(BASIC_FONT.render('Yellow', True, colors.bright_yellow))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 5, 50, 50, colors.bright_yellow)
-color_toothpaste = Tool(["Grid.set_color(colors.toothpaste)", "update_color_text(BASIC_FONT.render('Toothpaste', True, colors.toothpaste))"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 7, 50, 50, colors.toothpaste)
-color_cream = Tool(["Grid.set_color(colors.cream)", "update_color_text(BASIC_FONT.render('Cream', True, colors.cream))"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 7, 50, 50, colors.cream)
+color_red = Tool(["Grid.set_color(colors.really_red)", "update_color_text(BASIC_FONT.render('Red', True, colors.really_red))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 1, 50, 50, colors.really_red)
+color_green = Tool(["Grid.set_color(colors.earth_green)", "update_color_text(BASIC_FONT.render('Green', True, colors.earth_green))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 1, 50, 50, colors.earth_green)
+color_blue = Tool(["Grid.set_color(colors.really_blue)", "update_color_text(BASIC_FONT.render('Blue', True, colors.really_blue))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 3, 50, 50, colors.really_blue)
+color_pink = Tool(["Grid.set_color(colors.bright_pink)", "update_color_text(BASIC_FONT.render('Pink', True, colors.bright_pink))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 3, 50, 50, colors.bright_pink)
+color_purple = Tool(["Grid.set_color(colors.purple)", "update_color_text(BASIC_FONT.render('Purple', True, colors.purple))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 5, 50, 50, colors.purple)
+color_yellow = Tool(["Grid.set_color(colors.bright_yellow)", "update_color_text(BASIC_FONT.render('Yellow', True, colors.bright_yellow))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 5, 50, 50, colors.bright_yellow)
+color_toothpaste = Tool(["Grid.set_color(colors.toothpaste)", "update_color_text(BASIC_FONT.render('Toothpaste', True, colors.toothpaste))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 1, 0 + 50 * 7, 50, 50, colors.toothpaste)
+color_cream = Tool(["Grid.set_color(colors.cream)", "update_color_text(BASIC_FONT.render('Cream', True, colors.cream))"], ["change_bg_color(self.color)"], SCREENWIDTH + 25 + 50 * 3, 0 + 50 * 7, 50, 50, colors.cream)
 # other tools
-save_project = Tool(["save()"], SCREENWIDTH + 25 * 2, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
-open_project = Tool(["load()"], SCREENWIDTH + 25 * 2, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
-export_image = Tool(["export()"], SCREENWIDTH + 25 * 2, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
-add_background = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 9 - 25, 100, 35, colors.purple, "Background", 2, (85, 25))
-change_grid_size = Tool(["modify_grid_size()"], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Grid Size", 2, (90, 25))
-show_how_to_use = Tool([], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 11 - 25, 100, 35, colors.shady_red, "HOW TO USE", 2, (90, 25))
+save_project = Tool(["save()"], [], SCREENWIDTH + 25 * 2, 0 + 50 * 9 - 25, 100, 35, colors.really_blue, "Save", 2)
+open_project = Tool(["load()"], [], SCREENWIDTH + 25 * 2, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Open", 2)
+export_image = Tool(["export()"], [], SCREENWIDTH + 25 * 2, 0 + 50 * 11 - 25, 100, 35, colors.bright_pink, "Export", 2)
+add_background = Tool(["change_bg()"], [], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 9 - 25, 100, 35, colors.purple, "Background", 2, (85, 25))
+change_grid_size = Tool(["modify_grid_size()"], [], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 10 - 25, 100, 35, colors.really_blue, "Grid Size", 2, (90, 25))
+show_how_to_use = Tool([], [], SCREENWIDTH + 25 * 3 + 100, 0 + 50 * 11 - 25, 100, 35, colors.shady_red, "HOW TO USE", 2, (90, 25))
 
 colors_tuple = (color_red, color_green, color_blue, color_pink, color_purple, color_yellow, color_toothpaste, color_cream)
 other_tools_tuple = (save_project, open_project, export_image, add_background, change_grid_size, show_how_to_use)
@@ -420,6 +480,7 @@ clear_text = pygame.transform.scale(clear_text_temp, (clear_text_temp.get_width(
 home_dir = str(Path.home())
 canvas_path = os.path.join(home_dir, "Pictures", "Canvas")
 canvas_projects_path = os.path.join(home_dir, "Documents", "Canvas Projects")
+background_path = None
 # Canvas directory
 if(os.path.isdir(canvas_path)):
 	pass
@@ -444,8 +505,15 @@ while run:
 
 	game_display.fill(colors.white)
 
+	sub_surface = game_display.subsurface((0, 0, SCREENWIDTH, SCREENHEIGHT))
+	if(type(grid.background) is tuple):
+		sub_surface.fill(grid.background)
+	elif(type(grid.background) is pygame.Surface):
+		sub_surface.blit(grid.background, (0, 0))
+
 	grid.grid_events(game_display)
-	grid.draw(game_display, pygame.Color(255, 255, 255))
+	# if(type(grid.background) is tuple):
+	# 	grid.draw(game_display, grid.background)
 	grid.draw_cells(game_display)
 
 	pygame.draw.line(game_display, colors.black, (SCREENWIDTH + 25, 0 + 25), (SCREENWIDTH + 25, SCREENHEIGHT - 25))
