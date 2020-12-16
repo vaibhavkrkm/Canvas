@@ -536,16 +536,17 @@ home_dir = str(Path.home())
 canvas_path = os.path.join(home_dir, "Pictures", "Canvas")
 canvas_projects_path = os.path.join(home_dir, "Documents", "Canvas Projects")
 background_path = None
+print(os.path.isdir(canvas_path), canvas_path)
 # Canvas directory
 if(os.path.isdir(canvas_path)):
 	pass
 else:
-	os.mkdir(canvas_path)
+	os.makedirs(canvas_path)
 # Canvas projects directory
 if(os.path.isdir(canvas_projects_path)):
 	pass
 else:
-	os.mkdir(canvas_projects_path)
+	os.makedirs(canvas_projects_path)
 
 run = True
 while run:
