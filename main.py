@@ -462,7 +462,7 @@ def credits():
 	root.geometry(f"400x320+{screen_size[0] // 2 - 200}+{screen_size[1] // 2 - 160}")
 	root.title("Credits")
 
-	label_developed = tk.Label(root, text="\nSoftware (Version 1.0) Developed by :\nVaibhav Kumar")
+	label_developed = tk.Label(root, text="\nSoftware (Version 1.4) Developed by :\nVaibhav Kumar")
 	label_developed.pack()
 
 	label_tools = tk.Label(root, text="\nPencil, Eraser and Fill Tool Icons from :\nfindicons.com\n")
